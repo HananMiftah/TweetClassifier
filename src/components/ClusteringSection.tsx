@@ -27,7 +27,7 @@ interface ClusteringSectionProps {
 const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
   const { toast } = useToast();
   const [clusterCount, setClusterCount] = useState([3]);
-  const [method, setMethod] = useState<LinkageMethod>('average');
+  const [method, setMethod] = useState<LinkageMethod>("average");
   const [clusterResults, setClusterResults] = useState<{
     assignments: number[];
     accuracy: number;
@@ -36,6 +36,78 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
     linkage: ClusterNode[];
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleClustering = async () => {
+    if (tweets.length < 2) {
+      toast({
+        title: "Not enough data",
+        description: "You need at least 2 tweets to perform clustering",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/sentiment/cluster/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tweets,                // full tweets array (with text, cleaned, label)
+          k: clusterCount[0],    // number of clusters
+          linkage: method,       // 'average' | 'complete' | 'ward'
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "API error");
+      }
+
+      const data = await res.json();
+
+      // Backend returns:
+      // assignments: number[]
+      // accuracy: number | null
+      // rand_index: number | null
+      // confusion_matrix: { matrix: number[][], labels: string[] }
+      // linkage: { left: number | null, right: number | null, distance: number, count: number }[]
+
+      setClusterResults({
+        assignments: data.assignments,
+        accuracy: data.accuracy ?? 0,
+        confusionMatrix: data.confusion_matrix ?? { matrix: [], labels: [] },
+        randIndex: data.rand_index ?? 0,
+        linkage: data.linkage,
+      });
+
+      toast({
+        title: "Clustering complete",
+        description: `${tweets.length} tweets clustered into ${clusterCount[0]} groups using ${method} linkage`,
+      });
+    } catch (error) {
+      console.error("Clustering error:", error);
+      toast({
+        title: "Clustering failed",
+        description: "An error occurred during clustering",
+        variant: "destructive",
+      });
+    }
+
+    setIsProcessing(false);
+  };
+  // const { toast } = useToast();
+  // const [clusterCount, setClusterCount] = useState([3]);
+  // const [method, setMethod] = useState<LinkageMethod>('average');
+  // const [clusterResults, setClusterResults] = useState<{
+  //   assignments: number[];
+  //   accuracy: number;
+  //   confusionMatrix: { matrix: number[][]; labels: string[] };
+  //   randIndex: number;
+  //   linkage: ClusterNode[];
+  // } | null>(null);
+  // const [isProcessing, setIsProcessing] = useState(false);
 
   // const handleClustering = async () => {
   //   if (tweets.length < 2) {
@@ -165,60 +237,60 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
   //   setIsProcessing(false);
   // };
   
-  const handleClustering = async () => {
-    if (tweets.length < 2) {
-      toast({
-        title: "Not enough data",
-        description: "You need at least 2 tweets to perform clustering",
-        variant: "destructive"
-      });
-      return;
-    }
+  // const handleClustering = async () => {
+  //   if (tweets.length < 2) {
+  //     toast({
+  //       title: "Not enough data",
+  //       description: "You need at least 2 tweets to perform clustering",
+  //       variant: "destructive"
+  //     });
+  //     return;
+  //   }
   
-    setIsProcessing(true);
+  //   setIsProcessing(true);
   
-    try {
-      const response = await fetch("http://localhost:8000/api/sentiment/cluster/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tweets: tweets.map(t => ({ cleaned: t.cleaned, label: t.label || null })), 
-          k: clusterCount[0],
-          linkage: method
-        })
-      });
+  //   try {
+  //     const response = await fetch("http://localhost:8000/api/sentiment/cluster/", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         tweets: tweets.map(t => ({ cleaned: t.cleaned, label: t.label || null })), 
+  //         k: clusterCount[0],
+  //         linkage: method
+  //       })
+  //     });
   
-      const data = await response.json();
+  //     const data = await response.json();
   
-      if (!response.ok) {
-        throw new Error(data.error || "Clustering failed");
-      }
+  //     if (!response.ok) {
+  //       throw new Error(data.error || "Clustering failed");
+  //     }
   
-      // Update state with backend results
-      setClusterResults({
-        assignments: data.assignments,
-        accuracy: data.accuracy,
-        randIndex: data.rand_index,
-        linkage: data.linkage,
-        confusionMatrix: null  // Backend doesn't compute confusion matrix
-      });
+  //     // Update state with backend results
+  //     setClusterResults({
+  //       assignments: data.assignments,
+  //       accuracy: data.accuracy,
+  //       randIndex: data.rand_index,
+  //       linkage: data.linkage,
+  //       confusionMatrix: null  // Backend doesn't compute confusion matrix
+  //     });
   
-      toast({
-        title: "Clustering complete",
-        description: `${tweets.length} tweets clustered into ${clusterCount[0]} groups using ${method} linkage`
-      });
+  //     toast({
+  //       title: "Clustering complete",
+  //       description: `${tweets.length} tweets clustered into ${clusterCount[0]} groups using ${method} linkage`
+  //     });
   
-    } catch (error: any) {
-      console.error("Clustering error:", error);
-      toast({
-        title: "Clustering failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
+  //   } catch (error: any) {
+  //     console.error("Clustering error:", error);
+  //     toast({
+  //       title: "Clustering failed",
+  //       description: error.message,
+  //       variant: "destructive"
+  //     });
+  //   }
   
-    setIsProcessing(false);
-  };
+  //   setIsProcessing(false);
+  // };
   
   
   
@@ -407,7 +479,7 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
                         Cluster {clusterResults.assignments[idx]}
                       </Badge>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate">{tweet.text}</p>
+                        <p className="text-sm truncate">{tweet.cleaned}</p>
                         {tweet.label && (
                           <p className="text-xs text-muted-foreground mt-1">
                             Actual: <span className="font-medium">{tweet.label}</span>

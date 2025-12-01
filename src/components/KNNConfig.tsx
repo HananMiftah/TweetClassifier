@@ -4,7 +4,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Play, Loader2 } from "lucide-react";
-import { KNNParams, Tweet } from "@/pages/Index";
+import { KNNParams, NaiveBayesParams, Tweet } from "@/pages/Index";
 import { knnClassify } from "@/lib/knn";
 import { dictionaryClassify } from "@/lib/dictionaryClassify";
 import { naiveBayesClassify } from "@/lib/naiveBayes";
@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 interface KNNConfigProps {
   knnParams: KNNParams;
   setKnnParams: (params: KNNParams) => void;
+   naiveBayesParams: NaiveBayesParams;
+  setNaiveBayesParams: (params: NaiveBayesParams) => void;
   trainingTweets: Tweet[];
   testTweets: Tweet[];
   setTestTweets: (tweets: Tweet[]) => void;
@@ -26,6 +28,8 @@ interface KNNConfigProps {
 const KNNConfig = ({
   knnParams,
   setKnnParams,
+  naiveBayesParams,
+  setNaiveBayesParams,
   trainingTweets,
   testTweets,
   setTestTweets,
@@ -86,60 +90,74 @@ const KNNConfig = ({
   //     return;
   //   }
   const handleClassify = async () => {
-    if ((classificationMethod === "knn" || classificationMethod === "naiveBayes") && trainingTweets.length === 0) {
-      toast({
-        title: "No training data",
-        description: "Please upload training data first",
-        variant: "destructive"
-      });
-      return;
+  if ((classificationMethod === "knn" || classificationMethod === "naiveBayes") && trainingTweets.length === 0) {
+    toast({
+      title: "No training data",
+      description: "Please upload training data first",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  if (testTweets.length === 0) {
+    toast({
+      title: "No test data",
+      description: "Please upload test data first",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsClassifying(true);
+
+  try {
+    // Build params depending on the selected method
+    let params: any = {};
+
+    if (classificationMethod === "knn") {
+      params = {
+        k: knnParams.k,
+        distance: knnParams.distanceType,
+        vote: knnParams.voteType,
+      };
+    } else if (classificationMethod === "naiveBayes") {
+      params = {
+        representation: naiveBayesParams.representation, // "presence" | "frequency"
+        wordFilter: naiveBayesParams.wordFilter,         // "all" | "length3plus"
+        ngramType: naiveBayesParams.ngramType,           // "unigrams" | "bigrams" | "unigrams+bigrams"
+      };
     }
-  
-    if (testTweets.length === 0) {
-      toast({
-        title: "No test data",
-        description: "Please upload test data first",
-        variant: "destructive"
-      });
-      return;
-    }
-  
-    setIsClassifying(true);
-  
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api/sentiment/classify/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          training: trainingTweets,
-          test: testTweets,
-          method: classificationMethod,
-          params: {
-            k: knnParams.k,
-            distance: knnParams.distanceType,
-            vote: knnParams.voteType
-          }
-        })
-      });
-  
-      const data = await res.json();
-      setTestTweets(data.classified);
-  
-      toast({
-        title: "Classification complete",
-        description: `${data.classified.length} tweets classified successfully`,
-      });
-  
-    } catch (err) {
-      toast({
-        title: "API Error",
-        description: "Failed to classify tweets",
-        variant: "destructive"
-      });
-    }
-  
-    setIsClassifying(false);
-  };
+
+    const res = await fetch("http://127.0.0.1:8000/api/sentiment/classify/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        training: trainingTweets,
+        test: testTweets,
+        method: classificationMethod,
+        params,
+      }),
+    });
+
+    const data = await res.json();
+    setTestTweets(data.classified);
+
+    toast({
+      title: "Classification complete",
+      description: `${data.classified.length} tweets classified successfully`,
+    });
+  } catch (err) {
+    console.error(err);
+    toast({
+      title: "API Error",
+      description: "Failed to classify tweets",
+      variant: "destructive",
+    });
+  }
+
+  setIsClassifying(false);
+};
+
   
   //   setIsClassifying(true);
     
@@ -215,7 +233,7 @@ const KNNConfig = ({
 
   const unlabeledCount = trainingTweets.filter(t => !t.label).length;
 
-  return (
+ return (
     <div className="space-y-6">
       {/* Classification Method Selection */}
       <Card>
@@ -358,6 +376,90 @@ const KNNConfig = ({
       </Card>
         )}
 
+        {classificationMethod === "naiveBayes" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Naive Bayes Configuration</CardTitle>
+              <CardDescription>
+                Choose algorithm variations for sentiment classification
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="representation">Representation Type</Label>
+                <Select
+                  value={naiveBayesParams.representation}
+                  onValueChange={(value: "presence" | "frequency") => 
+                    setNaiveBayesParams({ ...naiveBayesParams, representation: value })
+                  }
+                >
+                  <SelectTrigger id="representation">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="presence">Presence (Binary)</SelectItem>
+                    <SelectItem value="frequency">Frequency (Count)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {naiveBayesParams.representation === "presence" 
+                    ? "Binary presence: words are either present or not (Question 1)"
+                    : "Frequency-based: counts word occurrences (Question 2.1)"}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="word-filter">Word Filtering</Label>
+                <Select
+                  value={naiveBayesParams.wordFilter}
+                  onValueChange={(value: "all" | "length3plus") => 
+                    setNaiveBayesParams({ ...naiveBayesParams, wordFilter: value })
+                  }
+                >
+                  <SelectTrigger id="word-filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Words</SelectItem>
+                    <SelectItem value="length3plus">Words &gt; 3 Letters</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {naiveBayesParams.wordFilter === "all"
+                    ? "Include all words in vocabulary"
+                    : "Filter out short words (≤3 letters) like articles and pronouns (Question 3.1)"}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="ngram-type">N-gram Type</Label>
+                <Select
+                  value={naiveBayesParams.ngramType}
+                  onValueChange={(value: "unigrams" | "bigrams" | "unigrams+bigrams") => 
+                    setNaiveBayesParams({ ...naiveBayesParams, ngramType: value })
+                  }
+                >
+                  <SelectTrigger id="ngram-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unigrams">Unigrams Only</SelectItem>
+                    <SelectItem value="bigrams">Bigrams Only</SelectItem>
+                    <SelectItem value="unigrams+bigrams">Unigrams + Bigrams</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {naiveBayesParams.ngramType === "unigrams"
+                    ? "Single words only"
+                    : naiveBayesParams.ngramType === "bigrams"
+                    ? "Two consecutive words (Question 3.2)"
+                    : "Combination of single words and word pairs (Question 3.2)"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
       <Card>
         <CardHeader>
           <CardTitle>Run Classification</CardTitle>
@@ -416,11 +518,23 @@ const KNNConfig = ({
               </ul>
             </div>
           )}
+
+          {classificationMethod === "naiveBayes" && (
+            <div className="rounded-lg bg-muted p-4 space-y-2">
+              <p className="text-sm font-medium">Current Configuration:</p>
+              <ul className="text-xs space-y-1 text-muted-foreground">
+                <li>• Representation: {naiveBayesParams.representation}</li>
+                <li>• Word filter: {naiveBayesParams.wordFilter === "all" ? "All words" : "Words > 3 letters"}</li>
+                <li>• N-grams: {naiveBayesParams.ngramType}</li>
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
       </div>
     </div>
   );
+
 };
 
 export default KNNConfig;

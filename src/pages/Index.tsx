@@ -22,6 +22,12 @@ export interface KNNParams {
   distanceType: "default" | "levenshtein" | "jaccard" | "cosine";
 }
 
+export interface NaiveBayesParams {
+  representation: "presence" | "frequency";
+  wordFilter: "all" | "length3plus";
+  ngramType: "unigrams" | "bigrams" | "unigrams+bigrams";
+}
+
 const Index = () => {
   const [trainingTweets, setTrainingTweets] = useState<Tweet[]>([]);
   const [testTweets, setTestTweets] = useState<Tweet[]>([]);
@@ -29,6 +35,11 @@ const Index = () => {
     k: 3,
     voteType: "majority",
     distanceType: "default"
+  });
+  const [naiveBayesParams, setNaiveBayesParams] = useState<NaiveBayesParams>({
+    representation: "frequency",
+    wordFilter: "length3plus",
+    ngramType: "unigrams+bigrams"
   });
   const [isClassifying, setIsClassifying] = useState(false);
   const [classificationMethod, setClassificationMethod] = useState<"knn" | "dictionary" | "naiveBayes">("knn");
@@ -97,6 +108,8 @@ const Index = () => {
             <KNNConfig 
               knnParams={knnParams}
               setKnnParams={setKnnParams}
+              naiveBayesParams={naiveBayesParams}
+              setNaiveBayesParams={setNaiveBayesParams}
               trainingTweets={trainingTweets}
               testTweets={testTweets}
               setTestTweets={setTestTweets}
