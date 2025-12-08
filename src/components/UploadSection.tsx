@@ -1,7 +1,19 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, CheckCircle2, Database, TestTube, Shuffle } from "lucide-react";
+import {
+  Upload,
+  CheckCircle2,
+  Database,
+  TestTube,
+  Shuffle,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tweet } from "@/pages/Index";
 import { cleanTweet, cleanTweetDjango } from "@/lib/cleaning";
@@ -16,7 +28,12 @@ interface UploadSectionProps {
   setTestTweets: (tweets: Tweet[]) => void;
 }
 
-const UploadSection = ({ trainingTweets, setTrainingTweets, testTweets, setTestTweets }: UploadSectionProps) => {
+const UploadSection = ({
+  trainingTweets,
+  setTrainingTweets,
+  testTweets,
+  setTestTweets,
+}: UploadSectionProps) => {
   const { toast } = useToast();
   const [trainingFile, setTrainingFile] = useState<File | null>(null);
   const [testFile, setTestFile] = useState<File | null>(null);
@@ -24,173 +41,210 @@ const UploadSection = ({ trainingTweets, setTrainingTweets, testTweets, setTestT
   const [testSplitPercentage, setTestSplitPercentage] = useState([30]); // 30% for test by default
 
   const detectDelimiter = (lines: string[]): string => {
-    if (lines.length === 0) return ',';
-    
+    if (lines.length === 0) return ",";
+
     // Check first few lines for common delimiters
     const sampleLine = lines[0];
     const semicolonCount = (sampleLine.match(/;/g) || []).length;
     const commaCount = (sampleLine.match(/,/g) || []).length;
-    
+
     // Return the delimiter that appears more frequently
-    return semicolonCount > commaCount ? ';' : ',';
+    return semicolonCount > commaCount ? ";" : ",";
   };
 
-  const parseCsvLine = (line: string, delimiter: string = ','): string[] => {
+  const parseCsvLine = (line: string, delimiter: string = ","): string[] => {
     const result: string[] = [];
-    let current = '';
+    let current = "";
     let inQuotes = false;
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === delimiter && !inQuotes) {
         result.push(current);
-        current = '';
+        current = "";
       } else {
         current += char;
       }
     }
     result.push(current);
-    return result.map(field => field.replace(/^"|"$/g, '').trim());
+    return result.map((field) => field.replace(/^"|"$/g, "").trim());
   };
 
-  const detectColumns = (lines: string[], delimiter: string): { tweetCol: number; labelCol: number } => {
+  const detectColumns = (
+    lines: string[],
+    delimiter: string
+  ): { tweetCol: number; labelCol: number } => {
     if (lines.length < 2) return { tweetCol: 0, labelCol: 0 };
-    
+
     // Parse sample rows (no header assumption)
     const startIdx = 0; // Start from first line, no header skip
-    const sampleRows = lines.slice(startIdx, Math.min(startIdx + 10, lines.length)).map(line => parseCsvLine(line, delimiter));
-    if (sampleRows.length === 0 || sampleRows[0].length === 0) return { tweetCol: 0, labelCol: 0 };
-    
+    const sampleRows = lines
+      .slice(startIdx, Math.min(startIdx + 10, lines.length))
+      .map((line) => parseCsvLine(line, delimiter));
+    if (sampleRows.length === 0 || sampleRows[0].length === 0)
+      return { tweetCol: 0, labelCol: 0 };
+
     const numColumns = sampleRows[0].length;
-    
+
     // Analyze each column based on data only
     const columnStats = Array.from({ length: numColumns }, (_, colIdx) => {
-      const values = sampleRows.map(row => row[colIdx] || '').filter(v => v.length > 0);
-      if (values.length === 0) return { 
-        colIdx, 
-        avgLength: 0, 
-        wordCount: 0,
-        alphaRatio: 0,
-        spaceCount: 0,
-        hasLabel: false, 
-        isNumeric: false,
-        score: 0
-      };
-      
+      const values = sampleRows
+        .map((row) => row[colIdx] || "")
+        .filter((v) => v.length > 0);
+      if (values.length === 0)
+        return {
+          colIdx,
+          avgLength: 0,
+          wordCount: 0,
+          alphaRatio: 0,
+          spaceCount: 0,
+          hasLabel: false,
+          isNumeric: false,
+          score: 0,
+        };
+
       // Calculate text statistics
-      const avgLength = values.reduce((sum, val) => sum + val.length, 0) / values.length;
-      
+      const avgLength =
+        values.reduce((sum, val) => sum + val.length, 0) / values.length;
+
       // Count words (sequences of letters separated by spaces)
-      const avgWordCount = values.reduce((sum, val) => {
-        const words = val.match(/[a-zA-Z]+/g);
-        return sum + (words ? words.length : 0);
-      }, 0) / values.length;
-      
+      const avgWordCount =
+        values.reduce((sum, val) => {
+          const words = val.match(/[a-zA-Z]+/g);
+          return sum + (words ? words.length : 0);
+        }, 0) / values.length;
+
       // Calculate ratio of alphabetical characters
-      const avgAlphaRatio = values.reduce((sum, val) => {
-        const alphaCount = (val.match(/[a-zA-Z]/g) || []).length;
-        return sum + (val.length > 0 ? alphaCount / val.length : 0);
-      }, 0) / values.length;
-      
+      const avgAlphaRatio =
+        values.reduce((sum, val) => {
+          const alphaCount = (val.match(/[a-zA-Z]/g) || []).length;
+          return sum + (val.length > 0 ? alphaCount / val.length : 0);
+        }, 0) / values.length;
+
       // Count spaces (natural text has spaces between words)
-      const avgSpaceCount = values.reduce((sum, val) => {
-        return sum + (val.match(/\s/g) || []).length;
-      }, 0) / values.length;
-      
+      const avgSpaceCount =
+        values.reduce((sum, val) => {
+          return sum + (val.match(/\s/g) || []).length;
+        }, 0) / values.length;
+
       // Check for sentiment labels
-      const hasLabel = values.some(val => ['0','2', '4', 'positive', 'negative', 'neutral'].includes(val.toLowerCase().trim()));
-      
+      const hasLabel = values.some((val) =>
+        ["0", "2", "4", "positive", "negative", "neutral"].includes(
+          val.toLowerCase().trim()
+        )
+      );
+
       // Check if numeric (but exclude long numbers like IDs)
-      const isNumeric = values.every(val => !isNaN(Number(val))) && avgLength < 5;
-      
+      const isNumeric =
+        values.every((val) => !isNaN(Number(val))) && avgLength < 5;
+
       // Calculate score for tweet likelihood (higher = more likely to be tweet)
       // Prioritize: word count, alphabetical ratio, presence of spaces
-      const score = (avgWordCount * 2) + (avgAlphaRatio * 50) + (avgSpaceCount * 1.5);
-      
-      return { 
-        colIdx, 
+      const score = avgWordCount * 2 + avgAlphaRatio * 50 + avgSpaceCount * 1.5;
+
+      return {
+        colIdx,
         avgLength,
         wordCount: avgWordCount,
         alphaRatio: avgAlphaRatio,
         spaceCount: avgSpaceCount,
-        hasLabel, 
+        hasLabel,
         isNumeric,
-        score
+        score,
       };
     });
 
-    const tweetCol = columnStats.reduce((max, stat) => 
+    const tweetCol = columnStats.reduce((max, stat) =>
       stat.score > max.score ? stat : max
     ).colIdx;
-    
-    const labelCol = columnStats.find(stat => 
-      (stat.hasLabel || (stat.isNumeric && stat.colIdx !== tweetCol))
-    )?.colIdx ?? 0;
-    
+
+    const labelCol =
+      columnStats.find(
+        (stat) => stat.hasLabel || (stat.isNumeric && stat.colIdx !== tweetCol)
+      )?.colIdx ?? 0;
+
     return { tweetCol, labelCol };
   };
 
-  const uploadToBackend = async (endpoint: string, file: File, extra: Record<string,any> = {}) => {
-  const form = new FormData();
-  form.append("file", file);
-  Object.entries(extra).forEach(([k,v]) => form.append(k, String(v)));
+  const uploadToBackend = async (
+    endpoint: string,
+    file: File,
+    extra: Record<string, any> = {}
+  ) => {
+    const form = new FormData();
+    form.append("file", file);
+    Object.entries(extra).forEach(([k, v]) => form.append(k, String(v)));
 
-  const res = await fetch("http://127.0.0.1:8000/api/sentiment/" + endpoint, {
-    method: "POST",
-    body: form,
-  });
+    const res = await fetch(
+      "https://backend-apii-o46a.onrender.com/api/sentiment/" + endpoint,
+      {
+        method: "POST",
+        body: form,
+      }
+    );
 
-  if (!res.ok) {
-    const err = await res.json().catch(()=>({detail: "upload failed"}));
-    throw new Error(err.detail || "Upload failed");
-  }
-  return res.json();
-};
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "upload failed" }));
+      throw new Error(err.detail || "Upload failed");
+    }
+    return res.json();
+  };
 
-const handleTrainingUpload = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  try {
-    const data = await uploadToBackend("upload/training/", file);
-    console.log(data)
-    setTrainingTweets(data.tweets.map((t,i) => ({...t, id:i})));
-    setTrainingFile(file);
-    toast({ title: "Training data loaded", description: `${data.count} tweets loaded` });
-  } catch (err) {
-    toast({ title: "Upload failed", description: String(err) });
-  }
-};
+  const handleTrainingUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await uploadToBackend("upload/training/", file);
+      console.log(data);
+      setTrainingTweets(data.tweets.map((t, i) => ({ ...t, id: i })));
+      setTrainingFile(file);
+      toast({
+        title: "Training data loaded",
+        description: `${data.count} tweets loaded`,
+      });
+    } catch (err) {
+      toast({ title: "Upload failed", description: String(err) });
+    }
+  };
 
-const handleTestUpload = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  try {
-    const data = await uploadToBackend("upload/test/", file);
-    console.log(data)
-    setTestTweets(data.tweets.map((t,i) => ({...t, id:i})));
-    setTestFile(file);
-    toast({ title: "Test data loaded", description: `${data.count} tweets loaded` });
-  } catch (err) {
-    toast({ title: "Upload failed", description: String(err) });
-  }
-};
+  const handleTestUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await uploadToBackend("upload/test/", file);
+      console.log(data);
+      setTestTweets(data.tweets.map((t, i) => ({ ...t, id: i })));
+      setTestFile(file);
+      toast({
+        title: "Test data loaded",
+        description: `${data.count} tweets loaded`,
+      });
+    } catch (err) {
+      toast({ title: "Upload failed", description: String(err) });
+    }
+  };
 
-const handleSingleDatasetUpload = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  try {
-    const data = await uploadToBackend("upload/single-split/", file, { test_percent: testSplitPercentage[0] });
+  const handleSingleDatasetUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await uploadToBackend("upload/single-split/", file, {
+        test_percent: testSplitPercentage[0],
+      });
 
-    setTrainingTweets(data.training_sample.map((t,i)=>({...t,id:i})));
-    setTestTweets(data.test_sample.map((t,i)=>({...t,id:i})));
-    setSingleFile(file);
-    toast({ title: "Dataset split", description: `Train ${data.training_count}, Test ${data.test_count}` });
-  } catch (err) {
-    toast({ title: "Upload failed", description: String(err) });
-  }
-};
+      setTrainingTweets(data.training_sample.map((t, i) => ({ ...t, id: i })));
+      setTestTweets(data.test_sample.map((t, i) => ({ ...t, id: i })));
+      setSingleFile(file);
+      toast({
+        title: "Dataset split",
+        description: `Train ${data.training_count}, Test ${data.test_count}`,
+      });
+    } catch (err) {
+      toast({ title: "Upload failed", description: String(err) });
+    }
+  };
 
   return (
     <Tabs defaultValue="separate" className="w-full">
@@ -222,15 +276,21 @@ const handleSingleDatasetUpload = async (e) => {
                 />
                 <label htmlFor="training-upload" className="cursor-pointer">
                   <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm font-medium mb-1">Click to upload training data</p>
-                  <p className="text-xs text-muted-foreground">CSV format with labels</p>
+                  <p className="text-sm font-medium mb-1">
+                    Click to upload training data
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    CSV format with labels
+                  </p>
                 </label>
               </div>
-              
+
               {trainingFile && (
                 <div className="flex items-center gap-2 text-sm text-success">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>{trainingFile.name} ({trainingTweets.length} tweets)</span>
+                  <span>
+                    {trainingFile.name} ({trainingTweets.length} tweets)
+                  </span>
                 </div>
               )}
             </CardContent>
@@ -257,15 +317,21 @@ const handleSingleDatasetUpload = async (e) => {
                 />
                 <label htmlFor="test-upload" className="cursor-pointer">
                   <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm font-medium mb-1">Click to upload test data</p>
-                  <p className="text-xs text-muted-foreground">CSV format without labels</p>
+                  <p className="text-sm font-medium mb-1">
+                    Click to upload test data
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    CSV format without labels
+                  </p>
                 </label>
               </div>
-              
+
               {testFile && (
                 <div className="flex items-center gap-2 text-sm text-success">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>{testFile.name} ({testTweets.length} tweets)</span>
+                  <span>
+                    {testFile.name} ({testTweets.length} tweets)
+                  </span>
                 </div>
               )}
             </CardContent>
@@ -281,17 +347,22 @@ const handleSingleDatasetUpload = async (e) => {
               <CardTitle>Upload Single Dataset</CardTitle>
             </div>
             <CardDescription>
-              Upload one CSV file with labeled tweets - it will be randomly split into training and test sets
+              Upload one CSV file with labeled tweets - it will be randomly
+              split into training and test sets
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="split-percentage" className="text-sm font-medium">
+                <Label
+                  htmlFor="split-percentage"
+                  className="text-sm font-medium"
+                >
                   Test Set Size: {testSplitPercentage[0]}%
                 </Label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Training: {100 - testSplitPercentage[0]}% | Test: {testSplitPercentage[0]}%
+                  Training: {100 - testSplitPercentage[0]}% | Test:{" "}
+                  {testSplitPercentage[0]}%
                 </p>
                 <Slider
                   id="split-percentage"
@@ -315,11 +386,15 @@ const handleSingleDatasetUpload = async (e) => {
               />
               <label htmlFor="single-upload" className="cursor-pointer">
                 <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm font-medium mb-1">Click to upload dataset</p>
-                <p className="text-xs text-muted-foreground">CSV format with labels - will be split automatically</p>
+                <p className="text-sm font-medium mb-1">
+                  Click to upload dataset
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  CSV format with labels - will be split automatically
+                </p>
               </label>
             </div>
-            
+
             {singleFile && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-success">
@@ -328,12 +403,20 @@ const handleSingleDatasetUpload = async (e) => {
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="p-3 bg-primary/10 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Training Set</p>
-                    <p className="font-semibold text-primary">{trainingTweets.length} tweets</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Training Set
+                    </p>
+                    <p className="font-semibold text-primary">
+                      {trainingTweets.length} tweets
+                    </p>
                   </div>
                   <div className="p-3 bg-accent/10 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Test Set</p>
-                    <p className="font-semibold text-accent">{testTweets.length} tweets</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Test Set
+                    </p>
+                    <p className="font-semibold text-accent">
+                      {testTweets.length} tweets
+                    </p>
                   </div>
                 </div>
               </div>
@@ -346,5 +429,3 @@ const handleSingleDatasetUpload = async (e) => {
 };
 
 export default UploadSection;
-
-

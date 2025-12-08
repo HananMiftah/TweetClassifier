@@ -1,20 +1,26 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tweet } from "@/pages/Index";
-import { 
-  createDistanceMatrix, 
-  hierarchicalClustering, 
+import {
+  createDistanceMatrix,
+  hierarchicalClustering,
   formClusters,
   calculateAccuracy,
   createConfusionMatrix,
   calculateRandIndex,
   LinkageMethod,
-  ClusterNode
+  ClusterNode,
 } from "@/lib/clustering";
 import { Network, BarChart3, GitBranch } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,15 +56,18 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
     setIsProcessing(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/sentiment/cluster/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tweets,                // full tweets array (with text, cleaned, label)
-          k: clusterCount[0],    // number of clusters
-          linkage: method,       // 'average' | 'complete' | 'ward'
-        }),
-      });
+      const res = await fetch(
+        "https://backend-apii-o46a.onrender.com/api/sentiment/cluster/",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tweets, // full tweets array (with text, cleaned, label)
+            k: clusterCount[0], // number of clusters
+            linkage: method, // 'average' | 'complete' | 'ward'
+          }),
+        }
+      );
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -67,7 +76,6 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
 
       const data = await res.json();
 
-     
       setClusterResults({
         assignments: data.assignments,
         accuracy: data.accuracy ?? 0,
@@ -90,10 +98,8 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
     }
 
     setIsProcessing(false);
-  }; 
-  
-  
-  
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -112,31 +118,34 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
               <Label className="text-sm font-medium">Clustering Method</Label>
               <div className="flex gap-2 mt-2">
                 <Button
-                  variant={method === 'average' ? 'default' : 'outline'}
+                  variant={method === "average" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setMethod('average')}
+                  onClick={() => setMethod("average")}
                 >
                   Average
                 </Button>
                 <Button
-                  variant={method === 'complete' ? 'default' : 'outline'}
+                  variant={method === "complete" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setMethod('complete')}
+                  onClick={() => setMethod("complete")}
                 >
                   Complete
                 </Button>
                 <Button
-                  variant={method === 'ward' ? 'default' : 'outline'}
+                  variant={method === "ward" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setMethod('ward')}
+                  onClick={() => setMethod("ward")}
                 >
                   Ward
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {method === 'average' && "Average linkage: distance between clusters is the average of all pairwise distances"}
-                {method === 'complete' && "Complete linkage: distance between clusters is the maximum pairwise distance"}
-                {method === 'ward' && "Ward linkage: minimizes within-cluster variance (bonus method)"}
+                {method === "average" &&
+                  "Average linkage: distance between clusters is the average of all pairwise distances"}
+                {method === "complete" &&
+                  "Complete linkage: distance between clusters is the maximum pairwise distance"}
+                {method === "ward" &&
+                  "Ward linkage: minimizes within-cluster variance (bonus method)"}
               </p>
             </div>
 
@@ -155,8 +164,8 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
               />
             </div>
 
-            <Button 
-              onClick={handleClustering} 
+            <Button
+              onClick={handleClustering}
               disabled={isProcessing || tweets.length < 2}
               className="w-full"
             >
@@ -180,11 +189,15 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
               <CardHeader>
                 <CardTitle>Dendrogram Tree</CardTitle>
                 <CardDescription>
-                  Hierarchical clustering tree visualization using {method} linkage
+                  Hierarchical clustering tree visualization using {method}{" "}
+                  linkage
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DendrogramVisualization linkage={clusterResults.linkage} method={method} />
+                <DendrogramVisualization
+                  linkage={clusterResults.linkage}
+                  method={method}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -200,19 +213,25 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-3 gap-4">
                   <div className="p-4 bg-primary/10 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Accuracy</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Accuracy
+                    </p>
                     <p className="text-2xl font-bold text-primary">
                       {(clusterResults.accuracy * 100).toFixed(1)}%
                     </p>
                   </div>
                   <div className="p-4 bg-accent/10 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Rand Index</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Rand Index
+                    </p>
                     <p className="text-2xl font-bold text-accent">
                       {clusterResults.randIndex.toFixed(3)}
                     </p>
                   </div>
                   <div className="p-4 bg-secondary/10 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Clusters</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Clusters
+                    </p>
                     <p className="text-2xl font-bold text-secondary-foreground">
                       {clusterCount[0]}
                     </p>
@@ -221,38 +240,52 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
 
                 {clusterResults.confusionMatrix.labels.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium mb-3">Confusion Matrix</h4>
+                    <h4 className="text-sm font-medium mb-3">
+                      Confusion Matrix
+                    </h4>
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse">
                         <thead>
                           <tr>
                             <th className="border border-border p-2 bg-muted"></th>
-                            {clusterResults.confusionMatrix.labels.map(label => (
-                              <th key={label} className="border border-border p-2 bg-muted text-xs">
-                                {label}
-                              </th>
-                            ))}
+                            {clusterResults.confusionMatrix.labels.map(
+                              (label) => (
+                                <th
+                                  key={label}
+                                  className="border border-border p-2 bg-muted text-xs"
+                                >
+                                  {label}
+                                </th>
+                              )
+                            )}
                           </tr>
                         </thead>
                         <tbody>
-                          {clusterResults.confusionMatrix.matrix.map((row, i) => (
-                            <tr key={i}>
-                              <td className="border border-border p-2 bg-muted text-xs font-medium">
-                                {clusterResults.confusionMatrix.labels[i]}
-                              </td>
-                              {row.map((val, j) => (
-                                <td 
-                                  key={j} 
-                                  className="border border-border p-2 text-center text-sm"
-                                  style={{
-                                    backgroundColor: val > 0 ? `hsl(var(--primary) / ${val / Math.max(...row) * 0.3})` : 'transparent'
-                                  }}
-                                >
-                                  {val}
+                          {clusterResults.confusionMatrix.matrix.map(
+                            (row, i) => (
+                              <tr key={i}>
+                                <td className="border border-border p-2 bg-muted text-xs font-medium">
+                                  {clusterResults.confusionMatrix.labels[i]}
                                 </td>
-                              ))}
-                            </tr>
-                          ))}
+                                {row.map((val, j) => (
+                                  <td
+                                    key={j}
+                                    className="border border-border p-2 text-center text-sm"
+                                    style={{
+                                      backgroundColor:
+                                        val > 0
+                                          ? `hsl(var(--primary) / ${
+                                              (val / Math.max(...row)) * 0.3
+                                            })`
+                                          : "transparent",
+                                    }}
+                                  >
+                                    {val}
+                                  </td>
+                                ))}
+                              </tr>
+                            )
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -273,7 +306,10 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
               <CardContent>
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {tweets.slice(0, 100).map((tweet, idx) => (
-                    <div key={tweet.id} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                    <div
+                      key={tweet.id}
+                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg"
+                    >
                       <Badge variant="outline" className="shrink-0">
                         Cluster {clusterResults.assignments[idx]}
                       </Badge>
@@ -281,7 +317,8 @@ const ClusteringSection = ({ tweets }: ClusteringSectionProps) => {
                         <p className="text-sm truncate">{tweet.cleaned}</p>
                         {tweet.label && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Actual: <span className="font-medium">{tweet.label}</span>
+                            Actual:{" "}
+                            <span className="font-medium">{tweet.label}</span>
                           </p>
                         )}
                       </div>
