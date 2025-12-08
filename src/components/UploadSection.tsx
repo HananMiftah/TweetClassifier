@@ -100,7 +100,7 @@ const UploadSection = ({ trainingTweets, setTrainingTweets, testTweets, setTestT
       }, 0) / values.length;
       
       // Check for sentiment labels
-      const hasLabel = values.some(val => ['0', '4', 'positive', 'negative', 'neutral'].includes(val.toLowerCase().trim()));
+      const hasLabel = values.some(val => ['0','2', '4', 'positive', 'negative', 'neutral'].includes(val.toLowerCase().trim()));
       
       // Check if numeric (but exclude long numbers like IDs)
       const isNumeric = values.every(val => !isNaN(Number(val))) && avgLength < 5;
@@ -120,13 +120,11 @@ const UploadSection = ({ trainingTweets, setTrainingTweets, testTweets, setTestT
         score
       };
     });
-    
-    // Find tweet column: highest score (indicating natural language text)
+
     const tweetCol = columnStats.reduce((max, stat) => 
       stat.score > max.score ? stat : max
     ).colIdx;
     
-    // Find label column: has sentiment labels OR is short numeric (but not tweet column)
     const labelCol = columnStats.find(stat => 
       (stat.hasLabel || (stat.isNumeric && stat.colIdx !== tweetCol))
     )?.colIdx ?? 0;
@@ -134,8 +132,7 @@ const UploadSection = ({ trainingTweets, setTrainingTweets, testTweets, setTestT
     return { tweetCol, labelCol };
   };
 
-  // in your UploadSection: replace handleTrainingUpload to send file to backend
-const uploadToBackend = async (endpoint: string, file: File, extra: Record<string,any> = {}) => {
+  const uploadToBackend = async (endpoint: string, file: File, extra: Record<string,any> = {}) => {
   const form = new FormData();
   form.append("file", file);
   Object.entries(extra).forEach(([k,v]) => form.append(k, String(v)));
@@ -157,7 +154,6 @@ const handleTrainingUpload = async (e) => {
   if (!file) return;
   try {
     const data = await uploadToBackend("upload/training/", file);
-    // you may set trainingTweets from response sample or re-parse on client if you prefer
     console.log(data)
     setTrainingTweets(data.tweets.map((t,i) => ({...t, id:i})));
     setTrainingFile(file);
@@ -172,7 +168,6 @@ const handleTestUpload = async (e) => {
   if (!file) return;
   try {
     const data = await uploadToBackend("upload/test/", file);
-    // you may set trainingTweets from response sample or re-parse on client if you prefer
     console.log(data)
     setTestTweets(data.tweets.map((t,i) => ({...t, id:i})));
     setTestFile(file);
@@ -187,7 +182,7 @@ const handleSingleDatasetUpload = async (e) => {
   if (!file) return;
   try {
     const data = await uploadToBackend("upload/single-split/", file, { test_percent: testSplitPercentage[0] });
-    // set training/test using samples from backend (for full sets you'd fetch or return all)
+
     setTrainingTweets(data.training_sample.map((t,i)=>({...t,id:i})));
     setTestTweets(data.test_sample.map((t,i)=>({...t,id:i})));
     setSingleFile(file);
@@ -196,162 +191,6 @@ const handleSingleDatasetUpload = async (e) => {
     toast({ title: "Upload failed", description: String(err) });
   }
 };
-
-  // const handleTrainingUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file) return;
-
-  //   setTrainingFile(file);
-  //   const text = await file.text();
-  //   const lines = text.split("\n").filter(line => line.trim());
-    
-  //   // Detect delimiter
-  //   const delimiter = detectDelimiter(lines);
-    
-  //   // Detect columns
-  //   const { tweetCol, labelCol } = detectColumns(lines, delimiter);
-    
-  //   // Parse data (no header skip since we don't assume headers exist)
-  //   const tweets: Tweet[] = [];
-  //   for (let i = 0; i < lines.length; i++) {
-  //     const parts = parseCsvLine(lines[i], delimiter);
-  //     if (parts.length === 0) continue;
-      
-  //     const labelValue = parts[labelCol]?.trim().toLowerCase();
-  //     const tweetText = parts[tweetCol]?.trim() || "";
-      
-  //     if (!tweetText) continue;
-      
-  //     const cleaned = await cleanTweetDjango(tweetText);
-      
-  //     // Normalize label to lowercase and handle different formats
-  //     let label: "positive" | "negative" | "neutral" = "neutral";
-  //     if (labelValue === "0" || labelValue === "negative") label = "negative";
-  //     else if (labelValue === "4" || labelValue === "positive") label = "positive";
-  //     else if (labelValue === "2" || labelValue === "neutral") label = "neutral";
-      
-  //     tweets.push({
-  //       id: i,
-  //       text: tweetText,
-  //       cleaned,
-  //       label
-  //     });
-  //   }
-
-  //   setTrainingTweets(tweets);
-  //   toast({
-  //     title: "Training data loaded",
-  //     description: `${tweets.length} tweets loaded successfully`,
-  //   });
-  // };
-
-  // const handleTestUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file) return;
-
-  //   setTestFile(file);
-  //   const text = await file.text();
-  //   const lines = text.split("\n").filter(line => line.trim());
-    
-  //   // Detect delimiter
-  //   const delimiter = detectDelimiter(lines);
-    
-  //   // Detect columns
-  //   const { tweetCol, labelCol } = detectColumns(lines, delimiter);
-    
-  //   // Parse data
-  //   const tweets: Tweet[] = [];
-  //   for (let i = 0; i < lines.length; i++) {
-  //     const parts = parseCsvLine(lines[i], delimiter);
-  //     if (parts.length === 0) continue;
-      
-  //     const labelValue = parts[labelCol]?.trim().toLowerCase();
-  //     const tweetText = parts[tweetCol]?.trim() || "";
-      
-  //     if (!tweetText) continue;
-      
-  //     const cleaned = cleanTweet(tweetText);
-      
-  //     // Parse label if it exists (for accuracy calculation)
-  //     let label: "positive" | "negative" | "neutral" | undefined = undefined;
-  //     if (labelValue && labelValue !== "target" && labelValue !== "label") {
-  //       if (labelValue === "0" || labelValue === "negative") label = "negative";
-  //       else if (labelValue === "4" || labelValue === "positive") label = "positive";
-  //       else if (labelValue === "2" || labelValue === "neutral") label = "neutral";
-  //     }
-      
-  //     tweets.push({
-  //       id: i,
-  //       text: tweetText,
-  //       cleaned,
-  //       label
-  //     });
-  //   }
-
-  //   setTestTweets(tweets);
-  //   toast({
-  //     title: "Test data loaded",
-  //     description: `${tweets.length} tweets loaded successfully`,
-  //   });
-  // };
-
-  // const handleSingleDatasetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file) return;
-
-  //   setSingleFile(file);
-  //   const text = await file.text();
-  //   const lines = text.split("\n").filter(line => line.trim());
-    
-  //   // Detect delimiter
-  //   const delimiter = detectDelimiter(lines);
-    
-  //   // Detect columns
-  //   const { tweetCol, labelCol } = detectColumns(lines, delimiter);
-    
-  //   // Parse all tweets
-  //   const allTweets: Tweet[] = [];
-  //   for (let i = 0; i < lines.length; i++) {
-  //     const parts = parseCsvLine(lines[i], delimiter);
-  //     if (parts.length === 0) continue;
-      
-  //     const labelValue = parts[labelCol]?.trim().toLowerCase();
-  //     const tweetText = parts[tweetCol]?.trim() || "";
-      
-  //     if (!tweetText) continue;
-      
-  //     const cleaned = cleanTweet(tweetText);
-      
-  //     // Normalize label to lowercase and handle different formats
-  //     let label: "positive" | "negative" | "neutral" = "neutral";
-  //     if (labelValue === "0" || labelValue === "negative") label = "negative";
-  //     else if (labelValue === "4" || labelValue === "positive") label = "positive";
-  //     else if (labelValue === "2" || labelValue === "neutral") label = "neutral";
-      
-  //     allTweets.push({
-  //       id: i,
-  //       text: tweetText,
-  //       cleaned,
-  //       label
-  //     });
-  //   }
-
-  //   // Shuffle the array randomly
-  //   const shuffled = [...allTweets].sort(() => Math.random() - 0.5);
-    
-  //   // Split based on percentage
-  //   const testSize = Math.floor(shuffled.length * (testSplitPercentage[0] / 100));
-  //   const testSet = shuffled.slice(0, testSize);
-  //   const trainingSet = shuffled.slice(testSize);
-
-  //   setTestTweets(testSet);
-  //   setTrainingTweets(trainingSet);
-    
-  //   toast({
-  //     title: "Dataset split successfully",
-  //     description: `Training: ${trainingSet.length} tweets, Test: ${testSet.length} tweets`,
-  //   });
-  // };
 
   return (
     <Tabs defaultValue="separate" className="w-full">

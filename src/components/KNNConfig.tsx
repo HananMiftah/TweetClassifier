@@ -79,16 +79,6 @@ const KNNConfig = ({
     setIsClassifying(false);
   };
   
-  // const handleAutoLabel = async () => {
-  //   const unlabeled = trainingTweets.filter(t => !t.label);
-    
-  //   if (unlabeled.length === 0) {
-  //     toast({
-  //       title: "No unlabeled data",
-  //       description: "All training data is already labeled",
-  //     });
-  //     return;
-  //   }
   const handleClassify = async () => {
   if ((classificationMethod === "knn" || classificationMethod === "naiveBayes") && trainingTweets.length === 0) {
     toast({
@@ -158,78 +148,6 @@ const KNNConfig = ({
   setIsClassifying(false);
 };
 
-  
-  //   setIsClassifying(true);
-    
-  //   setTimeout(() => {
-  //     const labeled = trainingTweets.map(tweet => {
-  //       if (!tweet.label) {
-  //         return {
-  //           ...tweet,
-  //           label: dictionaryClassify(tweet.cleaned || tweet.text)
-  //         };
-  //       }
-  //       return tweet;
-  //     });
-      
-  //     setTrainingTweets(labeled);
-  //     setIsClassifying(false);
-      
-  //     toast({
-  //       title: "Auto-labeling complete",
-  //       description: `${unlabeled.length} tweets labeled automatically`,
-  //     });
-  //   }, 500);
-  // };
-
-  // const handleClassify = async () => {
-  //   if ((classificationMethod === "knn" || classificationMethod === "naiveBayes") && trainingTweets.length === 0) {
-  //     toast({
-  //       title: "No training data",
-  //       description: "Please upload training data first",
-  //       variant: "destructive"
-  //     });
-  //     return;
-  //   }
-
-  //   if (testTweets.length === 0) {
-  //     toast({
-  //       title: "No test data",
-  //       description: "Please upload test data first",
-  //       variant: "destructive"
-  //     });
-  //     return;
-  //   }
-
-  //   setIsClassifying(true);
-    
-  //   setTimeout(() => {
-  //     const classified = testTweets.map(tweet => {
-  //       let predictedLabel: string;
-        
-  //       if (classificationMethod === "knn") {
-  //         predictedLabel = knnClassify(tweet.cleaned || tweet.text, trainingTweets, knnParams);
-  //       } else if (classificationMethod === "naiveBayes") {
-  //         predictedLabel = naiveBayesClassify(tweet.cleaned || tweet.text, trainingTweets);
-  //       } else {
-  //         predictedLabel = dictionaryClassify(tweet.cleaned || tweet.text);
-  //       }
-        
-  //       return {
-  //         ...tweet,
-  //         predictedLabel
-  //       };
-  //     });
-      
-  //     setTestTweets(classified);
-  //     setIsClassifying(false);
-      
-  //     toast({
-  //       title: "Classification complete",
-  //       description: `${classified.length} tweets classified successfully`,
-  //     });
-  //   }, 1000);
-  // };
 
   const unlabeledCount = trainingTweets.filter(t => !t.label).length;
 

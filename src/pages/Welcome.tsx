@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Brain, TrendingUp, Network } from "lucide-react";
-import heroImage from "@/assets/emotion-detection-hero.jpg";
+import heroImage from "@/assets/emotion-detection-hero2.jpg";
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const Welcome = () => {
             Tweet Sentiment Analyzer
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Advanced machine learning platform for analyzing emotions in tweets using KNN classification and clustering algorithms
+            Advanced machine learning platform for classifying tweets using different algorithms.
           </p>
         </header>
 
@@ -33,7 +33,7 @@ const Welcome = () => {
             </div>
             <h3 className="text-xl font-semibold mb-2 text-card-foreground">Smart Classification</h3>
             <p className="text-muted-foreground">
-              Detect positive, negative, and neutral emotions using K-Nearest Neighbors and dictionary-based methods
+              Detect positive, negative, and neutral tweets using K-Nearest Neighbors, Naive bayes, and dictionary-based methods
             </p>
           </div>
 
