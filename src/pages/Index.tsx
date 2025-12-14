@@ -7,6 +7,7 @@ import TweetsDisplay from "@/components/TweetsDisplay";
 import KNNConfig from "@/components/KNNConfig";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import ClusteringSection from "@/components/ClusteringSection";
+import ThemeToggle from "@/components/ui/ThemeToggele";
 
 export interface Tweet {
   id: number;
@@ -34,28 +35,39 @@ const Index = () => {
   const [knnParams, setKnnParams] = useState<KNNParams>({
     k: 3,
     voteType: "majority",
-    distanceType: "default"
+    distanceType: "default",
   });
   const [naiveBayesParams, setNaiveBayesParams] = useState<NaiveBayesParams>({
     representation: "frequency",
     wordFilter: "length3plus",
-    ngramType: "unigrams+bigrams"
+    ngramType: "unigrams+bigrams",
   });
   const [isClassifying, setIsClassifying] = useState(false);
-  const [classificationMethod, setClassificationMethod] = useState<"knn" | "dictionary" | "naiveBayes">("knn");
+  const [classificationMethod, setClassificationMethod] = useState<
+    "knn" | "dictionary" | "naiveBayes"
+  >("knn");
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-              <BarChart3 className="h-6 w-6 text-primary-foreground" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+                <BarChart3 className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  Tweet Sentiment Analyzer
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Machine Learning Classification Platform
+                </p>
+              </div>
             </div>
+            x
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Tweet Sentiment Analyzer</h1>
-              <p className="text-sm text-muted-foreground">Machine Learning Classification Platform</p>
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -88,7 +100,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="upload" className="space-y-6">
-            <UploadSection 
+            <UploadSection
               trainingTweets={trainingTweets}
               setTrainingTweets={setTrainingTweets}
               testTweets={testTweets}
@@ -97,7 +109,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="data" className="space-y-6">
-            <TweetsDisplay 
+            <TweetsDisplay
               trainingTweets={trainingTweets}
               testTweets={testTweets}
               setTestTweets={setTestTweets}
@@ -105,7 +117,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="config" className="space-y-6">
-            <KNNConfig 
+            <KNNConfig
               knnParams={knnParams}
               setKnnParams={setKnnParams}
               naiveBayesParams={naiveBayesParams}
@@ -126,7 +138,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="results" className="space-y-6">
-            <ResultsDisplay 
+            <ResultsDisplay
               testTweets={testTweets}
               isClassifying={isClassifying}
             />
