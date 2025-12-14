@@ -358,8 +358,8 @@ const KNNConfig = ({
                 </Select>
                 <p className="text-xs text-muted-foreground">
                   {naiveBayesParams.representation === "presence"
-                    ? "Binary presence: words are either present or not (Question 1)"
-                    : "Frequency-based: counts word occurrences (Question 2.1)"}
+                    ? "Binary presence: words are either present or not"
+                    : "Frequency-based: counts word occurrences"}
                 </p>
               </div>
 
@@ -387,7 +387,7 @@ const KNNConfig = ({
                 <p className="text-xs text-muted-foreground">
                   {naiveBayesParams.wordFilter === "all"
                     ? "Include all words in vocabulary"
-                    : "Filter out short words (≤3 letters) like articles and pronouns (Question 3.1)"}
+                    : "Filter out short words (≤3 letters) like articles and pronouns"}
                 </p>
               </div>
 
@@ -419,8 +419,8 @@ const KNNConfig = ({
                   {naiveBayesParams.ngramType === "unigrams"
                     ? "Single words only"
                     : naiveBayesParams.ngramType === "bigrams"
-                    ? "Two consecutive words (Question 3.2)"
-                    : "Combination of single words and word pairs (Question 3.2)"}
+                    ? "Two consecutive words"
+                    : "Combination of single words and word pairs"}
                 </p>
               </div>
             </CardContent>
