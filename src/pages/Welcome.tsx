@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Brain, TrendingUp, Network } from "lucide-react";
 import heroImage from "@/assets/emotion-detection-hero2.jpg";
+import ThemeToggle from "@/components/ui/ThemeToggele";
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -14,8 +15,12 @@ const Welcome = () => {
             Tweet Sentiment Analyzer
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Advanced machine learning platform for classifying tweets using different algorithms.
+            Advanced machine learning platform for classifying tweets using
+            different algorithms.
           </p>
+          <div>
+            <ThemeToggle />
+          </div>
         </header>
 
         <div className="max-w-6xl mx-auto mb-16">
@@ -31,9 +36,12 @@ const Welcome = () => {
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
               <Brain className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-card-foreground">Smart Classification</h3>
+            <h3 className="text-xl font-semibold mb-2 text-card-foreground">
+              Smart Classification
+            </h3>
             <p className="text-muted-foreground">
-              Detect positive, negative, and neutral tweets using K-Nearest Neighbors, Naive bayes, and dictionary-based methods
+              Detect positive, negative, and neutral tweets using K-Nearest
+              Neighbors, Naive bayes, and dictionary-based methods
             </p>
           </div>
 
@@ -41,9 +49,12 @@ const Welcome = () => {
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
               <Network className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-card-foreground">Advanced Clustering</h3>
+            <h3 className="text-xl font-semibold mb-2 text-card-foreground">
+              Advanced Clustering
+            </h3>
             <p className="text-muted-foreground">
-              Group similar tweets using hierarchical clustering with Average, Complete, and Ward methods
+              Group similar tweets using hierarchical clustering with Average,
+              Complete, and Ward methods
             </p>
           </div>
 
@@ -51,9 +62,12 @@ const Welcome = () => {
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
               <TrendingUp className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-card-foreground">Detailed Analytics</h3>
+            <h3 className="text-xl font-semibold mb-2 text-card-foreground">
+              Detailed Analytics
+            </h3>
             <p className="text-muted-foreground">
-              Evaluate results with accuracy metrics, confusion matrices, and Rand index comparisons
+              Evaluate results with accuracy metrics, confusion matrices, and
+              Rand index comparisons
             </p>
           </div>
         </div>

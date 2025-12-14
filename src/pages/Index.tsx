@@ -65,7 +65,7 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            x
+
             <div>
               <ThemeToggle />
             </div>
