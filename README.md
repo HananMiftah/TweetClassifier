@@ -20,6 +20,3 @@ The application allows users to upload tweet datasets as csv file and get a **se
 ---
 
 
-
-## 📁 Project Structure
-
